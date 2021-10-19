@@ -1,0 +1,7 @@
+[app_server]
+host=localhost
+port=3306
+user=root
+password=quyan@2020
+database=blind_tester
+autocommit=False
