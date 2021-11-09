@@ -2,5 +2,6 @@
     "file.server": "http://10.22.2.5",
     "resource.root.dir": "/data1/blind_test",
     "dataset.root.dir": "dataset",
-    "swap.result.root.dir": "swap_result"
+    "swap.result.root.dir": "swap_result",
+    "face.root.dir": "faces"
 }
