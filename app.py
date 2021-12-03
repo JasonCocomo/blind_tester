@@ -163,7 +163,7 @@ def not_between(value, min, max):
 @app.route("/api/upload/<file_type>", methods=['POST'])
 def upload_file(file_type: str,
                 file_service: FileService,
-                config_wrpper: ConfigWrapper
+                config_wrapper: ConfigWrapper
                 ):
     if file_type not in ['face', 'material']:
         return api_result(code=UNSUPPORTED_FILE_TYPE)
@@ -179,9 +179,9 @@ def upload_file(file_type: str,
         return api_result(code=UNSUPPORTED_FILE_TYPE)
 
     filename = str(uuid.uuid1()) + '.png'
-    resource_root_dir = config_wrpper.get(RESOURCE_ROOT_DIR)
-    face_root_dir = config_wrpper.get(FACE_ROOT_DIR)
-    file_server = config_wrpper.get(FILE_SERVER)
+    resource_root_dir = config_wrapper.get(RESOURCE_ROOT_DIR)
+    face_root_dir = config_wrapper.get(FACE_ROOT_DIR)
+    file_server = config_wrapper.get(FILE_SERVER)
     file_dir = os.path.join(resource_root_dir, face_root_dir)
     if not os.path.exists(file_dir):
         os.makedirs(file_dir)
@@ -203,12 +203,12 @@ def upload_file(file_type: str,
 def add_face(face_service: FaceService):
     rdata = request.get_json()
     file_id = int(rdata['file_id'])
-    nation = int(rdata['nation'])
+    skin_color = int(rdata['skin_color'])
     age_range = int(rdata['age_range'])
     gender = int(rdata['gender'])
     roughness = int(rdata['roughness'])
     remark = rdata['remark']
-    if not_between(nation, 0, 1) \
+    if not_between(skin_color, 0, 2) \
             or not_between(age_range, 0, 3) \
             or not_between(gender, 0, 1) \
             or not_between(roughness, 0, 4) \
@@ -216,13 +216,76 @@ def add_face(face_service: FaceService):
         return api_result(code=BAD_REQUEST)
 
     code, face_id = face_service.add_face(
-        file_id, nation, age_range, gender, roughness, remark)
+        file_id, skin_color, age_range, gender, roughness, remark)
     if code != OK:
         return api_result(code=code)
     data = {
         "face_id": face_id
     }
-    return api_result(code=code, data=data)
+    return api_result(data=data)
+
+
+@app.route("/api/face/query", methods=['POST'])
+def query_face(face_service: FaceService):
+    rdata = request.get_json()
+    query_text = rdata['query_text']
+    if query_text is None:
+        return api_result(code=BAD_REQUEST)
+
+    code, faces = face_service.query_faces(query_text)
+    if code != OK:
+        return api_result(code=code)
+    data = {
+        "faces": faces
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/face_group/list", methods=['POST'])
+def list_face_group(face_service: FaceService):
+    code, face_groups = face_service.list_face_groups()
+    if code != OK:
+        return api_result(code=code)
+    data = {
+        "face_groups": face_groups
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/face_group/create", methods=['POST'])
+def add_face_group(face_service: FaceService):
+    rdata = request.get_json()
+    print(rdata)
+    try:
+        name = rdata['name']
+        remark = rdata['remark']
+        if name is None or remark is None or name == "":
+            return api_result(code=BAD_REQUEST)
+    except Exception:
+        return api_result(code=BAD_REQUEST)
+
+    code, fg_id = face_service.add_face_group(name, remark)
+    if code != OK:
+        return api_result(code=code)
+    data = {
+        "fg_id": fg_id
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/face_group/add", methods=['POST'])
+def add_to_face_group(face_service: FaceService):
+    rdata = request.get_json()
+    fg_id = int(rdata['fg_id'])
+    face_id = int(rdata['face_id'])
+    if fg_id <= 0 \
+            or face_id <= 0:
+        return api_result(code=BAD_REQUEST)
+
+    code = face_service.add_to_face_dataset(fg_id, face_id)
+    if code != OK:
+        return api_result(code=code)
+    return api_result()
 
 
 FlaskInjector(app=app, modules=[MyModule])
