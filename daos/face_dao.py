@@ -15,16 +15,33 @@ save_face_group_sql = (
     "VALUES (%(name)s, %(remark)s)"
 )
 
-add_to_face_dataset_sql = (
-    "INSERT INTO face_dataset "
+join_into_face_group_sql = (
+    "INSERT INTO joined_face_group "
     "(fg_id, face_id) "
     "VALUES (%(fg_id)s, %(face_id)s)"
+)
+
+remove_from_face_group_sql = (
+    "DELETE FROM joined_face_group "
+    "WHERE fg_id = %(fg_id)s and face_id = %(face_id)s"
 )
 
 query_face_by_id_sql = (
     "SELECT face_id, file_id, filename "
     "FROM face "
     "WHERE face_id = %(face_id)s"
+)
+
+query_face_by_ids_sql = (
+    "SELECT face_id, file_id, filename "
+    "FROM face "
+    "WHERE face_id in ({})"
+)
+
+query_faces_by_group_sql = (
+    "SELECT face_id "
+    "FROM joined_face_group "
+    "WHERE fg_id = %(fg_id)s"
 )
 
 query_face_by_like_sql = (
@@ -46,12 +63,6 @@ query_face_group_sql = (
     "ORDER BY fg_id desc"
 )
 
-
-query_faces_by_group_sql = (
-    "SELECT face_id, filename, remark "
-    "FROM face_dataset "
-    "WHERE fg_id = %(fg_id)s"
-)
 
 update_face_group_status_sql = (
     "UPDATE face_group "
@@ -127,6 +138,12 @@ class FaceDao:
                     'fg_id': fg_id
                 }
                 cursor.execute(query_faces_by_group_sql, params)
+                face_ids = cursor.fetchall()
+                if len(face_ids) == 0:
+                    return faces
+                ids_str = ','.join(
+                    list(map(lambda face_id_ret: str(face_id_ret[0]), face_ids)))
+                cursor.execute(query_face_by_ids_sql.format(ids_str))
                 faces = cursor.fetchall()
             finally:
                 cursor.close()
@@ -134,7 +151,7 @@ class FaceDao:
             cnx.close()
         return faces
 
-    def query_face_by_id(self, face_id):
+    def query_face_by_face(self, face_id):
         cnx = self.cnx_pool.get_connection()
         try:
             cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
@@ -192,7 +209,7 @@ class FaceDao:
             cnx.close()
         return face_group
 
-    def add_to_face_dataset(self, fg_id: int, face_id: int):
+    def join_into_face_group(self, fg_id: int, face_id: int):
         cnx = self.cnx_pool.get_connection()
         try:
             cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
@@ -201,7 +218,23 @@ class FaceDao:
                     'fg_id': fg_id,
                     'face_id': face_id
                 }
-                cursor.execute(add_to_face_dataset_sql, params)
+                cursor.execute(join_into_face_group_sql, params)
+                cnx.commit()
+            finally:
+                cursor.close()
+        finally:
+            cnx.close()
+
+    def remove_from_face_group(self, fg_id: int, face_id: int):
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                params = {
+                    'fg_id': fg_id,
+                    'face_id': face_id
+                }
+                cursor.execute(remove_from_face_group_sql, params)
                 cnx.commit()
             finally:
                 cursor.close()

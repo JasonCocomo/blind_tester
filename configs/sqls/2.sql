@@ -34,8 +34,8 @@ CREATE TABLE `face_group` (
   PRIMARY KEY (`fg_id`),
   UNIQUE KEY (`name`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人脸组表，集中管理人脸';
-DROP TABLE `face_dataset`;
-CREATE TABLE `face_dataset` (
+DROP TABLE `joined_face_group`;
+CREATE TABLE `joined_face_group` (
   `fg_id` BIGINT NOT NULL COMMENT '人脸组id',
   `face_id` BIGINT NOT NULL COMMENT '人脸id',
   `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

@@ -241,6 +241,22 @@ def query_face(face_service: FaceService):
     return api_result(data=data)
 
 
+@app.route("/api/face/query_joined", methods=['POST'])
+def query_joined_face(face_service: FaceService):
+    rdata = request.get_json()
+    fg_id = rdata['fg_id']
+    if fg_id is None or fg_id < 0:
+        return api_result(code=BAD_REQUEST)
+
+    code, faces = face_service.query_faces_by_facegroup(fg_id)
+    if code != OK:
+        return api_result(code=code)
+    data = {
+        "faces": faces
+    }
+    return api_result(data=data)
+
+
 @app.route("/api/face_group/list", methods=['POST'])
 def list_face_group(face_service: FaceService):
     code, face_groups = face_service.list_face_groups()
@@ -273,8 +289,8 @@ def add_face_group(face_service: FaceService):
     return api_result(data=data)
 
 
-@app.route("/api/face_group/add", methods=['POST'])
-def add_to_face_group(face_service: FaceService):
+@app.route("/api/face_group/join", methods=['POST'])
+def join_into_face_group(face_service: FaceService):
     rdata = request.get_json()
     fg_id = int(rdata['fg_id'])
     face_id = int(rdata['face_id'])
@@ -282,7 +298,21 @@ def add_to_face_group(face_service: FaceService):
             or face_id <= 0:
         return api_result(code=BAD_REQUEST)
 
-    code = face_service.add_to_face_dataset(fg_id, face_id)
+    code = face_service.join_into_face_group(fg_id, face_id)
+    if code != OK:
+        return api_result(code=code)
+    return api_result()
+
+@app.route("/api/face_group/remove", methods=['POST'])
+def remove_from_face_group(face_service: FaceService):
+    rdata = request.get_json()
+    fg_id = int(rdata['fg_id'])
+    face_id = int(rdata['face_id'])
+    if fg_id <= 0 \
+            or face_id <= 0:
+        return api_result(code=BAD_REQUEST)
+
+    code = face_service.remove_from_face_group(fg_id, face_id)
     if code != OK:
         return api_result(code=code)
     return api_result()
