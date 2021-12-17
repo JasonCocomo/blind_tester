@@ -44,19 +44,28 @@ CREATE TABLE `joined_face_group` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '人脸数据集';
 DROP TABLE `swap_pair`;
 CREATE TABLE `swap_pair` (
+  `sp_id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '换脸对id',
   `face_id` BIGINT NOT NULL COMMENT '人脸ID',
   `material_id` BIGINT NOT NULL COMMENT '素材id',
-  `spg_id` BIGINT NOT NULL COMMENT '换脸对组id',
+  `remark` VARCHAR(256) NOT NULL COMMENT "备注",
   `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`material_id`, `face_id`)
+  PRIMARY KEY (`sp_id`),
+  UNIQUE KEY (`material_id`, `face_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '换脸对';
+DROP TABLE `swap_pair_dataset`;
+CREATE TABLE `swap_pair_dataset` (
+  `spd_id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '换脸对数据集id',
+  `name` VARCHAR(64) NOT NULL COMMENT '换脸对数据集名称',
+  `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`spd_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '换脸对数据集';
 DROP TABLE `swap_pair_group`;
 CREATE TABLE `swap_pair_group` (
-  `spg_id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '换脸对组id',
-  `name` VARCHAR(64) NOT NULL COMMENT '换脸对组名称',
-  `fg_id` BIGINT NOT NULL COMMENT '人脸组id',
+  `spd_id` BIGINT NOT NULL COMMENT '换脸对数据集id',
+  `sp_id` BIGINT NOT NULL COMMENT '换脸对id',
   `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`spg_id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '换脸对组';
+  PRIMARY KEY (`spd_id`, `sp_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '换脸对数组';

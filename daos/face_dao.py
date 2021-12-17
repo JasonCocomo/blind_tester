@@ -128,9 +128,26 @@ class FaceDao:
             cnx.close()
         return lastrow_id
 
+    def query_faces_by_faceids(self, face_ids):
+        faces = []
+        if len(face_ids) == 0:
+            return faces
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                ids_str = ','.join(
+                    list(map(lambda face_id: str(face_id), face_ids)))
+                cursor.execute(query_face_by_ids_sql.format(ids_str))
+                faces = cursor.fetchall()
+            finally:
+                cursor.close()
+        finally:
+            cnx.close()
+        return faces
+
     def query_faces_by_group(self, fg_id: int):
         cnx = self.cnx_pool.get_connection()
-        faces = []
         try:
             cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
             try:
@@ -139,17 +156,11 @@ class FaceDao:
                 }
                 cursor.execute(query_faces_by_group_sql, params)
                 face_ids = cursor.fetchall()
-                if len(face_ids) == 0:
-                    return faces
-                ids_str = ','.join(
-                    list(map(lambda face_id_ret: str(face_id_ret[0]), face_ids)))
-                cursor.execute(query_face_by_ids_sql.format(ids_str))
-                faces = cursor.fetchall()
             finally:
                 cursor.close()
         finally:
             cnx.close()
-        return faces
+        return face_ids
 
     def query_face_by_face(self, face_id):
         cnx = self.cnx_pool.get_connection()

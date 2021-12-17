@@ -15,6 +15,12 @@ query_material_sql = (
     "WHERE dataset_id = %(dataset_id)s"
 )
 
+query_materials_by_ids_sql = (
+    "SELECT material_id, basename, mtype "
+    "FROM material "
+    "WHERE material_id in ({})"
+)
+
 
 class MaterialDao:
 
@@ -60,3 +66,21 @@ class MaterialDao:
             return materials
         finally:
             cnx.close()
+
+    def query_materials_by_ids(self, material_ids):
+        materials = []
+        if len(material_ids) == 0:
+            return materials
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                ids_str = ','.join(
+                    list(map(lambda material_id: str(material_id), material_ids)))
+                cursor.execute(query_materials_by_ids_sql.format(ids_str))
+                materials = cursor.fetchall()
+            finally:
+                cursor.close()
+        finally:
+            cnx.close()
+        return materials

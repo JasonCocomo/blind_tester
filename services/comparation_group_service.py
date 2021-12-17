@@ -1,13 +1,13 @@
 
 from injector import inject
 from configs.config_wraper import ConfigWrapper
-from configs.keys import FILE_SERVER, RESOURCE_ROOT_DIR, SWAP_RESULT_ROOT_DIR
 from daos.comparation_group_dao import ComparationGroupDao
 from daos.material_dao import MaterialDao
 from daos.swap_test_dao import SwapTestDao
 import os
 import random
 from process_code import COMPARATION_GROUP_ALREADY_EXISTS, COMPARATION_GROUP_NOT_EXIST, INVALID_SWAP_TEST, MISMATCH_DATASET, OK
+from utils.db_file_util import DbFileUtil
 
 
 class ComparationGroupService:
@@ -15,11 +15,11 @@ class ComparationGroupService:
     def __init__(self, comparation_group_dao: ComparationGroupDao,
                  swap_test_dao: SwapTestDao,
                  material_dao: MaterialDao,
-                 config_warpper: ConfigWrapper):
+                 db_file_util: DbFileUtil):
         self.comparation_group_dao = comparation_group_dao
         self.swap_test_dao = swap_test_dao
         self.material_dao = material_dao
-        self.config_warpper = config_warpper
+        self.db_file_util = db_file_util
 
     def add_comparation_group(self, src_id: int, target_id: int, remark=None):
         src_swap = self.swap_test_dao.query_swap_test(src_id)
@@ -80,13 +80,9 @@ class ComparationGroupService:
         src_name, src_result_dir = src_swap[1], src_swap[2]
         target_name, target_result_dir = target_swap[1], target_swap[2]
 
-        resource_root_dir = self.config_warpper.get(RESOURCE_ROOT_DIR)
-        file_server = self.config_warpper.get(FILE_SERVER)
-        swap_result_root_dir = self.config_warpper.get(SWAP_RESULT_ROOT_DIR)
-        swap_result_dir = os.path.join(resource_root_dir, swap_result_root_dir)
-        src_swap_result_dir = os.path.join(swap_result_dir, src_result_dir)
-        target_swap_result_dir = os.path.join(
-            swap_result_dir, target_result_dir)
+        src_swap_result_dir, target_swap_result_dir = \
+            self.db_file_util.get_swap_result_dir(
+                src_result_dir, target_result_dir)
 
         pairs = []
         order = []
@@ -94,8 +90,8 @@ class ComparationGroupService:
             material_id, basename, mtype = material
             src_path = os.path.join(src_swap_result_dir, basename)
             target_path = os.path.join(target_swap_result_dir, basename)
-            src_path = src_path.replace(resource_root_dir, file_server)
-            target_path = target_path.replace(resource_root_dir, file_server)
+            src_path = self.db_file_util.get_server_url(src_path)
+            target_path = self.db_file_util.get_server_url(target_path)
             if not random_order or random.random() < 0.5:
                 pairs.append((mtype, src_path, target_path))
                 order.append(1)

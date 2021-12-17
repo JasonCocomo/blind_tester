@@ -1,21 +1,29 @@
 
 from logging import Logger
-
+import uuid
 from injector import inject
-from configs.config_wraper import ConfigWrapper
 from daos.file_dao import FileDao
 from process_code import OK
+from utils.db_file_util import DbFileUtil
 
 
 class FileService:
     @inject
     def __init__(self, file_dao: FileDao,
-                 config_warpper: ConfigWrapper,
+                 db_file_util: DbFileUtil,
                  logger: Logger) -> None:
         self.file_dao = file_dao
-        self.config_warpper = config_warpper
+        self.db_file_util = db_file_util
         self.logger = logger
 
-    def add_file(self, filename: str, file_type: str):
-        face_id = self.file_dao.add_file(filename, file_type)
-        return OK, face_id
+    def add_file(self, file, file_type: str):
+        filename = str(uuid.uuid1()) + '.png'
+        file_path = self.db_file_util.get_face_path(filename)
+        file.save(file_path)
+        file_id = self.file_dao.add_file(filename, file_type)
+        url = self.db_file_util.get_server_url(file_path)
+        data = {
+            'file_id': file_id,
+            'url': url
+        }
+        return OK, data

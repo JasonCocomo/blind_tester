@@ -1,5 +1,6 @@
 OK = 0
 # SYSTEM ERROR
+INCONSISTENT_DATA = 1
 
 # REQUEST INVALID
 BAD_REQUEST = 10
@@ -24,6 +25,8 @@ DB_FAILED_TO_SAVE = 1000
 
 CODE_MSG = {
     OK: "OK",
+
+    INCONSISTENT_DATA: "数据不一致",
 
     BAD_REQUEST: "错误请求",
     NO_SELECTED_FILE: "没有选择文件",

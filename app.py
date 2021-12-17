@@ -1,9 +1,8 @@
 from logging import Logger
-from flask import Flask, request, render_template
+from flask import Flask, request
 from mysql.connector.pooling import MySQLConnectionPool
 from api_result import api_result
 from configs.config_wraper import ConfigWrapper
-from configs.keys import FACE_ROOT_DIR, FILE_SERVER, RESOURCE_ROOT_DIR
 from process_code import BAD_REQUEST, NO_SELECTED_FILE, OK, UNSUPPORTED_FILE_TYPE
 from services.comparation_group_service import ComparationGroupService
 from services.comparation_result_service import ComparationResultService
@@ -11,19 +10,17 @@ from services.dataset_service import DatasetService
 from services.face_service import FaceService
 from services.file_service import FileService
 from services.swap_test_service import SwapTestService
+from services.swap_pair_service import SwapPairService
 from utils.mysql_helper import init_db_connection_pool
 from flask_injector import FlaskInjector
 from injector import Binder, Module, singleton
 from flask_cors import CORS
-import uuid
-import os
 
 config_path = 'configs/server.json'
 app = Flask(__name__)
 option_files = 'configs/mysql.cnf'
 option_groups = 'app_server'
 cnx_pool = init_db_connection_pool('app', 5, option_files, option_groups)
-dataset_root_dir_key = 'dataset.root.dir'
 
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 # CORS(app)
@@ -35,11 +32,6 @@ class MyModule(Module):
         binder.bind(ConfigWrapper, to=ConfigWrapper(
             config_path), scope=singleton)
         binder.bind(Logger, to=app.logger)
-
-
-@app.route("/")
-def hello_world():
-    return render_template('index.html')
 
 
 @app.route("/api/dataset/add", methods=['POST'])
@@ -162,8 +154,7 @@ def not_between(value, min, max):
 
 @app.route("/api/upload/<file_type>", methods=['POST'])
 def upload_file(file_type: str,
-                file_service: FileService,
-                config_wrapper: ConfigWrapper
+                file_service: FileService
                 ):
     if file_type not in ['face', 'material']:
         return api_result(code=UNSUPPORTED_FILE_TYPE)
@@ -178,24 +169,9 @@ def upload_file(file_type: str,
     if not allowed_file(file.filename, file_type):
         return api_result(code=UNSUPPORTED_FILE_TYPE)
 
-    filename = str(uuid.uuid1()) + '.png'
-    resource_root_dir = config_wrapper.get(RESOURCE_ROOT_DIR)
-    face_root_dir = config_wrapper.get(FACE_ROOT_DIR)
-    file_server = config_wrapper.get(FILE_SERVER)
-    file_dir = os.path.join(resource_root_dir, face_root_dir)
-    if not os.path.exists(file_dir):
-        os.makedirs(file_dir)
-    file_path = os.path.join(file_dir, filename)
-    file.save(file_path)
-
-    code, file_id = file_service.add_file(filename, file_type)
+    code, data = file_service.add_file(file, file_type)
     if code != OK:
         return api_result(code=code)
-    url = file_path.replace(resource_root_dir, file_server)
-    data = {
-        'file_id': file_id,
-        'url': url
-    }
     return api_result(data=data)
 
 
@@ -303,6 +279,7 @@ def join_into_face_group(face_service: FaceService):
         return api_result(code=code)
     return api_result()
 
+
 @app.route("/api/face_group/remove", methods=['POST'])
 def remove_from_face_group(face_service: FaceService):
     rdata = request.get_json()
@@ -313,6 +290,86 @@ def remove_from_face_group(face_service: FaceService):
         return api_result(code=BAD_REQUEST)
 
     code = face_service.remove_from_face_group(fg_id, face_id)
+    if code != OK:
+        return api_result(code=code)
+    return api_result()
+
+
+@app.route("/api/swap_pair/add", methods=['POST'])
+def add_swap_pair(swap_pair_service: SwapPairService):
+    rdata = request.get_json()
+    fg_id = int(rdata['face_id'])
+    face_id = int(rdata['material_id'])
+    remark = rdata['remark']
+    if fg_id <= 0 \
+            or face_id <= 0 \
+            or len(remark) == 0:
+        return api_result(code=BAD_REQUEST)
+
+    code, sp_id = swap_pair_service.add_swap_pair(fg_id, face_id, remark)
+    if code != OK:
+        return api_result(code=code)
+
+    data = {
+        'sp_id': sp_id
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/swap_pair/query", methods=['POST'])
+def query_swap_pairs(swap_pair_service: SwapPairService):
+    rdata = request.get_json()
+    sp_id = rdata.get('sp_id')
+    spd_id = rdata.get('spd_id')
+    remark = rdata.get('remark')
+    if sp_id is None and spd_id is None and (remark is None or len(remark) == 0):
+        return api_result(code=BAD_REQUEST)
+    if sp_id is not None:
+        sp_id = int(sp_id)
+        code, swap_pairs = swap_pair_service.query_swap_pair(sp_id)
+    if spd_id is not None:
+        spd_id = int(spd_id)
+        code, swap_pairs = swap_pair_service.query_swap_pair_by_spd_id(spd_id)
+    else:
+        code, swap_pairs = swap_pair_service.query_swap_pair_by_remark(remark)
+
+    if code != OK:
+        return api_result(code=code)
+
+    data = {
+        'swap_pairs': swap_pairs
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/swap_pair_dataset/create", methods=['POST'])
+def create_swap_pair_dataset(swap_pair_service: SwapPairService):
+    rdata = request.get_json()
+    name = rdata['name']
+
+    if len(name) == 0:
+        return api_result(code=BAD_REQUEST)
+    code, spd_id = swap_pair_service.add_swap_pair_dataset(name)
+
+    if code != OK:
+        return api_result(code=code)
+
+    data = {
+        'spd_id': spd_id
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/swap_pair_dataset/join", methods=['POST'])
+def join_swap_pair_dataset(swap_pair_service: SwapPairService):
+    rdata = request.get_json()
+    spd_id = rdata['spd_id']
+    sp_id = rdata['sp_id']
+
+    if spd_id <= 0 or sp_id <= 0:
+        return api_result(code=BAD_REQUEST)
+    code = swap_pair_service.add_swap_pair_to_dataset(spd_id, sp_id)
+
     if code != OK:
         return api_result(code=code)
     return api_result()
