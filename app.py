@@ -38,10 +38,49 @@ class MyModule(Module):
 def add_dataset(dataset_service: DatasetService):
     rdata = request.get_json()
     name = rdata['name']
-    data_dir = rdata['dir']
     remark = rdata.get('remark')
-    code = dataset_service.add(name, data_dir, remark)
+    code, dataset_id = dataset_service.create_dataset(name, remark)
+    if code != OK:
+        return api_result(code=code)
+    data = {
+        'dataset_id': dataset_id
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/material/add", methods=['POST'])
+def add_material(dataset_service: DatasetService):
+    rdata = request.get_json()
+    file_id = rdata['file_id']
+    mtype = rdata['mtype']
+    remark = rdata['remark']
+    code, material_id = dataset_service.create_material(file_id, mtype, remark)
+    if code != OK:
+        return api_result(code=code)
+    data = {
+        'material_id': material_id
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/material_group/join", methods=['POST'])
+def add_material_to_dataset(dataset_service: DatasetService):
+    rdata = request.get_json()
+    dataset_id = rdata['dataset_id']
+    material_id = rdata['material_id']
+    code = dataset_service.add_material_to_dataset(dataset_id, material_id)
     return api_result(code=code)
+
+
+@app.route("/api/dataset/query", methods=['POST'])
+def query_dataset(dataset_service: DatasetService):
+    rdata = request.get_json()
+    query_text = rdata.get('query_text')
+    code, datasets = dataset_service.query_datasets(query_text)
+    data = {
+        'datasets': datasets
+    }
+    return api_result(code=code, data=data)
 
 
 @app.route("/api/swap_test/add", methods=['POST'])

@@ -2,7 +2,7 @@ DROP TABLE `file`;
 CREATE TABLE `file` (
   `file_id` BIGINT AUTO_INCREMENT NOT NULL COMMENT '文件id',
   `filename` VARCHAR(128) NOT NULL COMMENT '文件名',
-  `file_type` VARCHAR(16) NOT NULL COMMENT '文件类型',
+  `file_type` VARCHAR(16) NOT NULL COMMENT '文件类型, face:人脸，material: 素材',
   `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`file_id`),

@@ -17,8 +17,9 @@ class FileService:
         self.logger = logger
 
     def add_file(self, file, file_type: str):
-        filename = str(uuid.uuid1()) + '.png'
-        file_path = self.db_file_util.get_face_path(filename)
+        extinction = file.filename.split('.')[-1]
+        filename = str(uuid.uuid1()) + '.' + extinction
+        file_path = self.db_file_util.get_file_path(filename, file_type)
         file.save(file_path)
         file_id = self.file_dao.add_file(filename, file_type)
         url = self.db_file_util.get_server_url(file_path)

@@ -3,7 +3,6 @@ DROP TABLE `dataset`;
 CREATE TABLE `dataset` (
   `id` BIGINT AUTO_INCREMENT COMMENT '数据集id',
   `name` VARCHAR(128) NOT NULL COMMENT '数据集名',
-  `data_dir` VARCHAR(256) NOT NULL COMMENT '数据集所在目录',
   `remark` VARCHAR(1024) DEFAULT NULL COMMENT '备注',
   `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -12,13 +11,27 @@ CREATE TABLE `dataset` (
 DROP TABLE `material`;
 CREATE TABLE `material` (
   `material_id` BIGINT AUTO_INCREMENT COMMENT '素材id',
+  `file_id` BIGINT NOT NULL COMMENT '文件id',
   `basename` VARCHAR(64) NOT NULL COMMENT '文件basename',
   `mtype` VARCHAR(16) NOT NULL COMMENT '素材类型，video,gif,image',
-  `dataset_id` BIGINT NOT NULL COMMENT '归属数据集id',
+  `remark` VARCHAR(256) DEFAULT NULL COMMENT '备注',
   `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`material_id`)
+  PRIMARY KEY (`material_id`),
+  UNIQUE KEY (`file_id`),
+  UNIQUE KEY (`basename`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '测试数据集表';
+
+DROP TABLE `material_group`;
+
+CREATE TABLE `material_group` (
+  `dataset_id` BIGINT NOT NULL COMMENT '数据集id',
+  `material_id` BIGINT NOT NULL COMMENT '素材id',
+  `created_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`dataset_id`, `material_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '素材组';
+
 DROP TABLE `swap_test`;
 CREATE TABLE `swap_test` (
   `swap_id` BIGINT AUTO_INCREMENT COMMENT '换脸测试id',

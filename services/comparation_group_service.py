@@ -46,12 +46,13 @@ class ComparationGroupService:
         else:
             groups = self.comparation_group_dao.list_comparation_group_by_dataset_id(
                 dataset_id)
+        if len(groups) == 0:
+            return []
         swap_id_set = set()
         for group in groups:
             swap_id_set.add(group[1])  # add src_id
             swap_id_set.add(group[2])  # add target_id
-        swap_ids = ','.join(map(str, swap_id_set))
-        id_names = self.swap_test_dao.query_swap_test_names_by_ids(swap_ids)
+        id_names = self.swap_test_dao.query_swap_test_names_by_ids(swap_id_set)
         id_name_dict = dict()
         for _swap_id, name in id_names:
             id_name_dict[_swap_id] = name

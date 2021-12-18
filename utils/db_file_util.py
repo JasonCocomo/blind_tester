@@ -21,10 +21,14 @@ class DbFileUtil:
             return INVALID_FACE
         return OK
 
-    def get_face_path(self, filename):
+    def get_file_path(self, filename, filetype):
         resource_root_dir = self.config_wrapper.get(keys.RESOURCE_ROOT_DIR)
-        face_root_dir = self.config_wrapper.get(keys.FACE_ROOT_DIR)
-        file_dir = os.path.join(resource_root_dir, face_root_dir)
+        if filetype == 'face':
+            sub_root_dir = self.config_wrapper.get(keys.FACE_ROOT_DIR)
+        else:
+            sub_root_dir = self.config_wrapper.get(keys.DATASET_ROOT_DIR)
+
+        file_dir = os.path.join(resource_root_dir, sub_root_dir)
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
         return os.path.join(file_dir, filename)

@@ -48,8 +48,11 @@ class FaceService:
         return OK, faces
 
     def query_faces_by_facegroup(self, fg_id):
-        faceids = self.face_dao.query_faces_by_group(fg_id)
-        db_faces = self.face_dao.query_faces_by_faceids(faceids)
+        db_faceids = self.face_dao.query_faces_by_group(fg_id)
+        face_ids = []
+        for db_faceid in db_faceids:
+            face_ids.append(db_faceid[0])
+        db_faces = self.face_dao.query_faces_by_faceids(face_ids)
         faces = self.db_file_util.convert_db_faces(db_faces)
         return OK, faces
 

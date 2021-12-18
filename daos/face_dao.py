@@ -138,6 +138,7 @@ class FaceDao:
             try:
                 ids_str = ','.join(
                     list(map(lambda face_id: str(face_id), face_ids)))
+                print(query_face_by_ids_sql.format(ids_str))
                 cursor.execute(query_face_by_ids_sql.format(ids_str))
                 faces = cursor.fetchall()
             finally:
