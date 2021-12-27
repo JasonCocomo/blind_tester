@@ -76,7 +76,7 @@ class ComparationGroupService:
 
         src_swap = self.swap_test_dao.query_swap_test(src_id)
         target_swap = self.swap_test_dao.query_swap_test(target_id)
-        materials = self.material_dao.get_materials(dataset_id)
+        materials = self.material_dao.query_materials_by_dataset_id(dataset_id)
 
         src_name, src_result_dir = src_swap[1], src_swap[2]
         target_name, target_result_dir = target_swap[1], target_swap[2]

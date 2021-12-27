@@ -6,6 +6,7 @@ from injector import inject
 from daos.dataset_dao import DatasetDao
 from daos.file_dao import FileDao
 from daos.material_dao import MaterialDao
+from utils.db_file_util import DbFileUtil
 from process_code import INVALID_MATERIAL, MATERIAL_ALREADY_IN_DATASET, OK
 
 
@@ -14,10 +15,12 @@ class DatasetService:
     def __init__(self, dataset_dao: DatasetDao,
                  material_dao: MaterialDao,
                  file_dao: FileDao,
+                 db_file_util: DbFileUtil,
                  logger: Logger) -> None:
         self.dataset_dao = dataset_dao
         self.material_dao = material_dao
         self.file_dao = file_dao
+        self.db_file_util = db_file_util
         self.logger = logger
 
     def create_dataset(self, name, remark):
@@ -47,3 +50,8 @@ class DatasetService:
         else:
             self.dataset_dao.list_datasets()
         return OK, datasets
+
+    def query_materials_joined(self, dataset_id: int):
+        db_materials = self.material_dao.query_materials_by_dataset_id(dataset_id)
+        materials = self.db_file_util.convert_db_materials(db_materials)
+        return OK, materials

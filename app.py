@@ -71,6 +71,18 @@ def add_material_to_dataset(dataset_service: DatasetService):
     code = dataset_service.add_material_to_dataset(dataset_id, material_id)
     return api_result(code=code)
 
+@app.route("/api/material_group/query_joined", methods=['POST'])
+def query_materials_joined(dataset_service: DatasetService):
+    rdata = request.get_json()
+    dataset_id = rdata['dataset_id']
+    code, materials = dataset_service.query_materials_joined(dataset_id)
+    if code != OK:
+        return api_result(code=code)
+    data = {
+        'materials': materials
+    }
+    return api_result(data=data)
+
 
 @app.route("/api/dataset/query", methods=['POST'])
 def query_dataset(dataset_service: DatasetService):

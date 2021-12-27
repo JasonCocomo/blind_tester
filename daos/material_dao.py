@@ -21,9 +21,9 @@ query_exist_in_dataset_sql = (
 )
 
 query_material_by_dataset_id_sql = (
-    "SELECT material_id, basename, mtype "
+    "SELECT m.material_id, m.basename, m.mtype "
     "FROM material as m LEFT JOIN material_group as mg "
-    "on mg.dataset_id = %(dataset_id)s and m.material_id = mg.material_id"
+    "on m.material_id = mg.material_id where mg.dataset_id = %(dataset_id)s "
 )
 
 query_materials_by_ids_sql = (
@@ -91,7 +91,7 @@ class MaterialDao:
         finally:
             cnx.close()
 
-    def get_materials(self, dataset_id: int):
+    def query_materials_by_dataset_id(self, dataset_id: int):
         cnx = self.cnx_pool.get_connection()
         try:
             cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
