@@ -62,6 +62,18 @@ def add_material(dataset_service: DatasetService):
     }
     return api_result(data=data)
 
+@app.route("/api/material/query", methods=['POST'])
+def query_material(dataset_service: DatasetService):
+    rdata = request.get_json()
+    query_text = rdata.get('query_text')
+    code, materials = dataset_service.query_materials_by_remark(query_text)
+    if code != OK:
+        return api_result(code=code)
+    data = {
+        'materials': materials
+    }
+    return api_result(data=data)
+
 
 @app.route("/api/material_group/join", methods=['POST'])
 def add_material_to_dataset(dataset_service: DatasetService):
@@ -69,6 +81,14 @@ def add_material_to_dataset(dataset_service: DatasetService):
     dataset_id = rdata['dataset_id']
     material_id = rdata['material_id']
     code = dataset_service.add_material_to_dataset(dataset_id, material_id)
+    return api_result(code=code)
+
+@app.route("/api/material_group/remove", methods=['POST'])
+def remove_material_from_dataset(dataset_service: DatasetService):
+    rdata = request.get_json()
+    dataset_id = rdata['dataset_id']
+    material_id = rdata['material_id']
+    code = dataset_service.remove_material_from_dataset(dataset_id, material_id)
     return api_result(code=code)
 
 @app.route("/api/material_group/query_joined", methods=['POST'])

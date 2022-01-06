@@ -19,6 +19,11 @@ query_swap_pair_by_remark_sql = (
     "where remark LIKE '%{}%';"
 )
 
+exist_swap_pair_sql = (
+    "SELECT count(*) FROM swap_pair "
+    "WHERE face_id = %(face_id)s and material_id = %(material_id)s"
+)
+
 save_swap_pair_sql = (
     "INSERT INTO swap_pair "
     "(face_id, material_id, remark) "
@@ -110,6 +115,23 @@ class SwapPairDao:
                 cursor.execute(save_swap_pair_sql, params)
                 cnx.commit()
                 return cursor.lastrowid
+            finally:
+                cursor.close()
+        finally:
+            cnx.close()
+
+    def exist_swap_pair(self, face_id:int, material_id: int):
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                params = {
+                    'face_id': face_id,
+                    'material_id': material_id
+                }
+                cursor.execute(exist_swap_pair_sql, params)
+                count = cursor.fetchone()
+                return count is not None and count[0] > 0
             finally:
                 cursor.close()
         finally:

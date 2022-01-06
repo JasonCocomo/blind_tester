@@ -3,7 +3,7 @@ from injector import inject
 from daos.face_dao import FaceDao
 from daos.material_dao import MaterialDao
 from daos.swap_pair_dao import SwapPairDao
-from process_code import BAD_REQUEST, INCONSISTENT_DATA, OK
+from process_code import BAD_REQUEST, INCONSISTENT_DATA, OK, SWAP_PAIR_EXIST
 from utils.db_file_util import DbFileUtil
 
 
@@ -37,6 +37,9 @@ class SwapPairService:
         return OK, swap_pairs
 
     def add_swap_pair(self, face_id: int, material_id: int, remark: str):
+        exists = self.swap_pair_dao.exist_swap_pair(face_id, material_id)
+        if exists:
+            return SWAP_PAIR_EXIST, -1
         sp_id = self.swap_pair_dao.add_swap_pair(face_id, material_id, remark)
         return OK, sp_id
 

@@ -15,6 +15,11 @@ add_to_dataset_sql = (
     "VALUES (%(dataset_id)s, %(material_id)s)"
 )
 
+remove_from_dataset_sql = (
+    "DELETE FROM material_group "
+    "WHERE dataset_id = %(dataset_id)s and material_id = %(material_id)s"
+)
+
 query_exist_in_dataset_sql = (
     "select count(*) from material_group "
     "where dataset_id = %(dataset_id)s and material_id = %(material_id)s"
@@ -30,6 +35,12 @@ query_materials_by_ids_sql = (
     "SELECT material_id, basename, mtype "
     "FROM material "
     "WHERE material_id in ({})"
+)
+
+query_material_by_remark_like = (
+    "SELECT material_id, basename, mtype "
+    "FROM material "
+    "WHERE remark like '%{}%'"
 )
 
 
@@ -58,7 +69,7 @@ class MaterialDao:
         finally:
             cnx.close()
 
-    def not_exists_in_dataset(self, dataset_id, material_id):
+    def exists_in_dataset(self, dataset_id, material_id):
         cnx = self.cnx_pool.get_connection()
         try:
             cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
@@ -68,8 +79,8 @@ class MaterialDao:
                     'material_id': material_id
                 }
                 cursor.execute(query_exist_in_dataset_sql, params)
-                count = cursor.fetchone()
-                return count is None
+                count_item = cursor.fetchone()
+                return count_item is not None and count_item[0] > 0
             finally:
                 cursor.close()
         finally:
@@ -85,6 +96,22 @@ class MaterialDao:
                     'material_id': material_id
                 }
                 cursor.execute(add_to_dataset_sql, params)
+                cnx.commit()
+            finally:
+                cursor.close()
+        finally:
+            cnx.close()
+
+    def remove_from_dataset(self, dataset_id, material_id):
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                params = {
+                    'dataset_id': dataset_id,
+                    'material_id': material_id
+                }
+                cursor.execute(remove_from_dataset_sql, params)
                 cnx.commit()
             finally:
                 cursor.close()
@@ -124,3 +151,16 @@ class MaterialDao:
         finally:
             cnx.close()
         return materials
+
+    def query_materials_by_remark(self, remark: str):
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                cursor.execute(query_material_by_remark_like.format(remark))
+                materials = cursor.fetchall()
+            finally:
+                cursor.close()
+            return materials
+        finally:
+            cnx.close()

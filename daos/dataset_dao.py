@@ -10,12 +10,12 @@ save_dataset_sql = (
 )
 
 query_dataset_sql = (
-    "SELECT id, name, remark FORM dataset "
+    "SELECT id, name, remark FROM dataset "
     "WHERE name like '{}'"
 )
 
 list_dataset_sql = (
-    "SELECT id, name, remark FORM dataset "
+    "SELECT id, name, remark FROM dataset "
 )
 
 
