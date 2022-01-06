@@ -11,6 +11,7 @@ from services.face_service import FaceService
 from services.file_service import FileService
 from services.swap_test_service import SwapTestService
 from services.swap_pair_service import SwapPairService
+from utils.db_file_util import DbFileUtil
 from utils.mysql_helper import init_db_connection_pool
 from flask_injector import FlaskInjector
 from injector import Binder, Module, singleton
@@ -62,6 +63,7 @@ def add_material(dataset_service: DatasetService):
     }
     return api_result(data=data)
 
+
 @app.route("/api/material/query", methods=['POST'])
 def query_material(dataset_service: DatasetService):
     rdata = request.get_json()
@@ -83,13 +85,16 @@ def add_material_to_dataset(dataset_service: DatasetService):
     code = dataset_service.add_material_to_dataset(dataset_id, material_id)
     return api_result(code=code)
 
+
 @app.route("/api/material_group/remove", methods=['POST'])
 def remove_material_from_dataset(dataset_service: DatasetService):
     rdata = request.get_json()
     dataset_id = rdata['dataset_id']
     material_id = rdata['material_id']
-    code = dataset_service.remove_material_from_dataset(dataset_id, material_id)
+    code = dataset_service.remove_material_from_dataset(
+        dataset_id, material_id)
     return api_result(code=code)
+
 
 @app.route("/api/material_group/query_joined", methods=['POST'])
 def query_materials_joined(dataset_service: DatasetService):
@@ -393,12 +398,10 @@ def query_swap_pairs(swap_pair_service: SwapPairService):
     sp_id = rdata.get('sp_id')
     spd_id = rdata.get('spd_id')
     remark = rdata.get('remark')
-    if sp_id is None and spd_id is None and (remark is None or len(remark) == 0):
-        return api_result(code=BAD_REQUEST)
     if sp_id is not None:
         sp_id = int(sp_id)
         code, swap_pairs = swap_pair_service.query_swap_pair(sp_id)
-    if spd_id is not None:
+    elif spd_id is not None:
         spd_id = int(spd_id)
         code, swap_pairs = swap_pair_service.query_swap_pair_by_spd_id(spd_id)
     else:
@@ -406,7 +409,6 @@ def query_swap_pairs(swap_pair_service: SwapPairService):
 
     if code != OK:
         return api_result(code=code)
-
     data = {
         'swap_pairs': swap_pairs
     }
@@ -430,9 +432,40 @@ def create_swap_pair_dataset(swap_pair_service: SwapPairService):
     }
     return api_result(data=data)
 
+@app.route("/api/swap_pair_dataset/export_json", methods=['POST'])
+def export_swap_pair_dataset(swap_pair_service: SwapPairService, config_wrapper: ConfigWrapper):
+    rdata = request.get_json()
+    spd_id = rdata['spd_id']
+    
+    code, swap_pairs = swap_pair_service.query_swap_pair_by_spd_id(spd_id)
+    if code != OK:
+        return api_result(code=code)
+
+    data = {
+        'swap_pairs': swap_pairs,
+    }
+    return api_result(data=data)
+
+
+@app.route("/api/swap_pair_dataset/query", methods=['POST'])
+def query_swap_pair_dataset(swap_pair_service: SwapPairService):
+    rdata = request.get_json()
+    name = rdata.get('query_text')
+
+    code, swap_pair_dataset_list = swap_pair_service.query_swap_pair_dataset_list(
+        name)
+
+    if code != OK:
+        return api_result(code=code)
+
+    data = {
+        'swap_pair_dataset_list': swap_pair_dataset_list
+    }
+    return api_result(data=data)
+
 
 @app.route("/api/swap_pair_dataset/join", methods=['POST'])
-def join_swap_pair_dataset(swap_pair_service: SwapPairService):
+def join_swap_pair_into_dataset(swap_pair_service: SwapPairService):
     rdata = request.get_json()
     spd_id = rdata['spd_id']
     sp_id = rdata['sp_id']
@@ -440,6 +473,21 @@ def join_swap_pair_dataset(swap_pair_service: SwapPairService):
     if spd_id <= 0 or sp_id <= 0:
         return api_result(code=BAD_REQUEST)
     code = swap_pair_service.add_swap_pair_to_dataset(spd_id, sp_id)
+
+    if code != OK:
+        return api_result(code=code)
+    return api_result()
+
+
+@app.route("/api/swap_pair_dataset/remove", methods=['POST'])
+def remove_swap_pair_from_dataset(swap_pair_service: SwapPairService):
+    rdata = request.get_json()
+    spd_id = rdata['spd_id']
+    sp_id = rdata['sp_id']
+
+    if spd_id <= 0 or sp_id <= 0:
+        return api_result(code=BAD_REQUEST)
+    code = swap_pair_service.remove_swap_pair_from_dataset(spd_id, sp_id)
 
     if code != OK:
         return api_result(code=code)

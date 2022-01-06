@@ -11,7 +11,7 @@ query_swap_pair_by_id_sql = (
 query_swap_pair_by_swap_pair_dataset_id_sql = (
     "select sp.sp_id, sp.face_id, sp.material_id, sp.remark FROM swap_pair as sp "
     "LEFT JOIN swap_pair_group as spg "
-    "ON spg.spd_id = %(spd_id)s and sp.sp_id = spg.sp_id"
+    "ON sp.sp_id = spg.sp_id WHERE spg.spd_id = %(spd_id)s"
 )
 
 query_swap_pair_by_remark_sql = (
@@ -37,14 +37,29 @@ save_swap_pair_dataset_sql = (
 )
 
 query_swap_pair_dataset_sql = (
-    "SELECT * FROM swap_pair_dataset "
+    "SELECT spd_id, name FROM swap_pair_dataset "
     "WHERE spd_id = %(spd_id)s"
+)
+
+query_swap_pair_dataset_by_name_sql = (
+    "SELECT spd_id, name FROM swap_pair_dataset "
+    "WHERE name LIKE '%{}%'"
 )
 
 add_swap_pair_to_dataset_sql = (
     "INSERT INTO swap_pair_group "
     "(spd_id, sp_id) "
     "VALUES (%(spd_id)s, %(sp_id)s)"
+)
+
+exist_swap_pair_in_dataset_sql = (
+    "SELECT count(*) FROM swap_pair_group "
+    "WHERE spd_id = %(spd_id)s and sp_id = %(sp_id)s"
+)
+
+remove_swap_pair_from_dataset_sql = (
+    "DELETE FROM swap_pair_group "
+    "WHERE spd_id = %(spd_id)s and sp_id = %(sp_id)s"
 )
 
 
@@ -86,6 +101,41 @@ class SwapPairDao:
         finally:
             cnx.close()
         return swap_pairs
+    
+    def exist_swap_pair_in_dataset(self, spd_id: int,  sp_id: int):
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                params = {
+                    'spd_id': spd_id,
+                    'sp_id': sp_id
+                }
+                cursor.execute(
+                    exist_swap_pair_in_dataset_sql, params)
+                count = cursor.fetchone()
+                return count is not None and count[0] > 0
+            finally:
+                cursor.close()
+        finally:
+            cnx.close()
+
+    def remove_swap_pair_from_dataset(self, spd_id: int,  sp_id: int):
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                params = {
+                    'spd_id': spd_id,
+                    'sp_id': sp_id
+                }
+                cursor.execute(
+                    remove_swap_pair_from_dataset_sql, params)
+                cnx.commit()
+            finally:
+                cursor.close()
+        finally:
+            cnx.close()
 
     def query_swap_pair_by_remark(self, remark: str):
         cnx = self.cnx_pool.get_connection()
@@ -164,6 +214,18 @@ class SwapPairDao:
                 }
                 cursor.execute(query_swap_pair_dataset_sql, params)
                 return cursor.fetchone()
+            finally:
+                cursor.close()
+        finally:
+            cnx.close()
+    
+    def query_swap_pair_dataset_by_name(self, name: str):
+        cnx = self.cnx_pool.get_connection()
+        try:
+            cursor: CMySQLCursor = cnx.cursor(cursor_class=CMySQLCursor)
+            try:
+                cursor.execute(query_swap_pair_dataset_by_name_sql.format(name))
+                return cursor.fetchall()
             finally:
                 cursor.close()
         finally:
