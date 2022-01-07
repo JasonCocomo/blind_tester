@@ -50,7 +50,6 @@ class ComparationResultService:
         for i in range(material_count):
             cr_material_dim_scores.append(dict())
             all_material_dim_scores.append(defaultdict(int))
-
         for id, target_score, score_dim in cg_dim_scores:
             str_scores = target_score.split(self.value_separator)
             material_scores = list(map(int, str_scores))
@@ -64,8 +63,9 @@ class ComparationResultService:
 
         for material_dim_scores in all_material_dim_scores:
             for key in material_dim_scores.keys():
+                # cg_dim_scores中有五个维度重复出现
                 material_dim_scores[key] = material_dim_scores[key] \
-                    / len(cg_dim_scores)
+                    / len(cg_dim_scores) * len(model_dim_scores)
         final_model_dim_scores = dict()
         for dim, scores in model_dim_scores.items():
             final_model_dim_scores[dim] = sum(scores)/len(scores)

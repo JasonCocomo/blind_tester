@@ -5,8 +5,8 @@ from injector import inject
 
 save_comparation_group_sql = (
     "INSERT INTO comparation_group "
-    "(src_id, target_id, dataset_id, remark) "
-    "VALUES (%(src_id)s, %(target_id)s, %(dataset_id)s, %(remark)s)"
+    "(src_id, target_id, spd_id, remark) "
+    "VALUES (%(src_id)s, %(target_id)s, %(spd_id)s, %(remark)s)"
 )
 list_all_comparation_group_sql = (
     "SELECT * from comparation_group "
@@ -22,7 +22,7 @@ query_comparation_group_by_src_target_sql = (
 )
 
 query_comparation_group_by_cg_id_sql = (
-    "SELECT src_id, target_id, dataset_id from comparation_group "
+    "SELECT src_id, target_id, spd_id from comparation_group "
     "WHERE cg_id = %(cg_id)s"
 )
 
@@ -102,7 +102,7 @@ class ComparationGroupDao:
         finally:
             cnx.close()
 
-    def add_comparation_group(self, src_id: int, target_id: int, dataset_id: int, remark=None):
+    def add_comparation_group(self, src_id: int, target_id: int, spd_id: int, remark=None):
         cnx = self.cnx_pool.get_connection()
 
         try:
@@ -111,7 +111,7 @@ class ComparationGroupDao:
                 params = {
                     'src_id': src_id,
                     'target_id': target_id,
-                    'dataset_id': dataset_id,
+                    'spd_id': spd_id,
                     'remark': remark
                 }
                 cursor.execute(save_comparation_group_sql, params)

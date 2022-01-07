@@ -39,8 +39,8 @@ class DbFileUtil:
         return file_path.replace(resource_root_dir, file_server)
 
     def get_swap_result_dir(self, src_result_dir, target_result_dir):
-        resource_root_dir = self.config_warpper.get(keys.RESOURCE_ROOT_DIR)
-        swap_result_root_dir = self.config_warpper.get(
+        resource_root_dir = self.config_wrapper.get(keys.RESOURCE_ROOT_DIR)
+        swap_result_root_dir = self.config_wrapper.get(
             keys.SWAP_RESULT_ROOT_DIR)
         swap_result_dir = os.path.join(resource_root_dir, swap_result_root_dir)
         src_swap_result_dir = os.path.join(swap_result_dir, src_result_dir)

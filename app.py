@@ -125,10 +125,10 @@ def add_swap_test(swap_test_service: SwapTestService):
     rdata = request.get_json()
     name = rdata['name']
     result_dir = rdata['result_dir']
-    dataset_id = rdata['dataset_id']
+    spd_id = rdata['spd_id']
     remark = rdata.get('remark')
     code = swap_test_service.add_swap_test(
-        name, result_dir, dataset_id, remark)
+        name, result_dir, spd_id, remark)
     return api_result(code=code)
 
 
@@ -155,12 +155,13 @@ def list_comparation_group(comparation_group_service: ComparationGroupService):
 def rank_comparation_group(comparation_group_service: ComparationGroupService):
     rdata = request.get_json()
     cg_id = rdata['cg_id']
-    code, pairs, order = comparation_group_service.rank(cg_id)
+    code, pairs, order, swap_pairs = comparation_group_service.rank(cg_id)
     if code != OK:
         return api_result(code=code)
     data = {
         "pairs": pairs,
         "order": order,
+        "swap_pairs": swap_pairs,
         'cg_id': cg_id
     }
     return api_result(code=OK, data=data)
@@ -187,7 +188,7 @@ def query_comparation_result(comparation_result_service: ComparationResultServic
     rdata = request.get_json()
     cg_id = rdata['cg_id']
     cr_id = rdata.get('cr_id')
-    src_id, target_id, dataset_id = comparation_group_service.query_comparation_group(
+    src_id, target_id, spd_id = comparation_group_service.query_comparation_group(
         cg_id)
     code, src_name, target_name = swap_test_service.query_src_and_target_names_by_ids(
         src_id, target_id)
@@ -197,7 +198,7 @@ def query_comparation_result(comparation_result_service: ComparationResultServic
         = comparation_result_service.query_comparation_result(cg_id, cr_id)
     if code != OK:
         return api_result(code=code)
-    code, pairs, order = comparation_group_service.rank(
+    code, pairs, order, swap_pairs = comparation_group_service.rank(
         cg_id, random_order=False)
     if code != OK:
         return api_result(code=code)
@@ -208,6 +209,7 @@ def query_comparation_result(comparation_result_service: ComparationResultServic
         "target_name": target_name,
         "pairs": pairs,
         "order": order,
+        "swap_pairs": swap_pairs,
         "model_dim_scores": final_model_dim_scores,
         "all_material_dim_scores": all_material_dim_scores,
         "cr_material_dim_scores": cr_material_dim_scores
@@ -323,7 +325,6 @@ def list_face_group(face_service: FaceService):
 @app.route("/api/face_group/create", methods=['POST'])
 def add_face_group(face_service: FaceService):
     rdata = request.get_json()
-    print(rdata)
     try:
         name = rdata['name']
         remark = rdata['remark']

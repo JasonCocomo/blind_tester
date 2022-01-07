@@ -9,8 +9,8 @@ class SwapTestService:
     def __init__(self, swap_test_dao: SwapTestDao):
         self.swap_test_dao = swap_test_dao
 
-    def add_swap_test(self, name: str, result_dir: str, dataset_id: int, remark):
-        self.swap_test_dao.add_swap_test(name, result_dir, dataset_id, remark)
+    def add_swap_test(self, name: str, result_dir: str, spd_id: int, remark):
+        self.swap_test_dao.add_swap_test(name, result_dir, spd_id, remark)
         return OK
 
     def query_src_and_target_names_by_ids(self, src_id: int, target_id: int):

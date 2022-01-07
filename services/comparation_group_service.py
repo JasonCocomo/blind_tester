@@ -1,12 +1,12 @@
 
 from injector import inject
-from configs.config_wraper import ConfigWrapper
 from daos.comparation_group_dao import ComparationGroupDao
 from daos.material_dao import MaterialDao
 from daos.swap_test_dao import SwapTestDao
 import os
 import random
 from process_code import COMPARATION_GROUP_ALREADY_EXISTS, COMPARATION_GROUP_NOT_EXIST, INVALID_SWAP_TEST, MISMATCH_DATASET, OK
+from services.swap_pair_service import SwapPairService
 from utils.db_file_util import DbFileUtil
 
 
@@ -14,10 +14,12 @@ class ComparationGroupService:
     @inject
     def __init__(self, comparation_group_dao: ComparationGroupDao,
                  swap_test_dao: SwapTestDao,
+                 swap_pair_service: SwapPairService,
                  material_dao: MaterialDao,
                  db_file_util: DbFileUtil):
         self.comparation_group_dao = comparation_group_dao
         self.swap_test_dao = swap_test_dao
+        self.swap_pair_service = swap_pair_service
         self.material_dao = material_dao
         self.db_file_util = db_file_util
 
@@ -28,16 +30,16 @@ class ComparationGroupService:
         target_warp = self.swap_test_dao.query_swap_test(target_id)
         if target_warp is None or len(target_warp) == 0:
             return INVALID_SWAP_TEST
-        src_swap_id, src_name, src_result_dir, src_dataset_id = src_swap
-        target_swap_id, target_name, target_result_dir, target_dataset_id = target_warp
-        if src_dataset_id != target_dataset_id:
+        src_swap_id, src_name, src_result_dir, src_spd_id = src_swap
+        target_swap_id, target_name, target_result_dir, target_spd_id = target_warp
+        if src_spd_id != target_spd_id:
             return MISMATCH_DATASET
         existed = self.comparation_group_dao.exist_comparation_group(
             src_id, target_id)
         if existed:
             return COMPARATION_GROUP_ALREADY_EXISTS
         self.comparation_group_dao.add_comparation_group(
-            src_id, target_id, src_dataset_id, remark)
+            src_id, target_id, src_spd_id, remark)
         return OK
 
     def list_comparation_group(self, dataset_id=None):
@@ -72,11 +74,14 @@ class ComparationGroupService:
         group = self.comparation_group_dao.query_comparation_group(cg_id)
         if group is None or len(group) == 0:
             return COMPARATION_GROUP_NOT_EXIST, None, None
-        src_id, target_id, dataset_id = group[0], group[1], group[2]
+        src_id, target_id, spd_id = group[0], group[1], group[2]
 
         src_swap = self.swap_test_dao.query_swap_test(src_id)
         target_swap = self.swap_test_dao.query_swap_test(target_id)
-        materials = self.material_dao.query_materials_by_dataset_id(dataset_id)
+        code, swap_pairs = self.swap_pair_service.query_swap_pair_by_spd_id(
+            spd_id)
+        if code != OK:
+            return code, [], [], []
 
         src_name, src_result_dir = src_swap[1], src_swap[2]
         target_name, target_result_dir = target_swap[1], target_swap[2]
@@ -87,10 +92,13 @@ class ComparationGroupService:
 
         pairs = []
         order = []
-        for material in materials:
-            material_id, basename, mtype = material
-            src_path = os.path.join(src_swap_result_dir, basename)
-            target_path = os.path.join(target_swap_result_dir, basename)
+        for swap_pair in swap_pairs:
+            material = swap_pair['material']
+            basename = os.path.basename(material['url'])
+            mtype = material['mtype']
+            sp_id = swap_pair['sp_id']
+            src_path = os.path.join(src_swap_result_dir, str(sp_id), basename)
+            target_path = os.path.join(target_swap_result_dir, str(sp_id), basename)
             src_path = self.db_file_util.get_server_url(src_path)
             target_path = self.db_file_util.get_server_url(target_path)
             if not random_order or random.random() < 0.5:
@@ -99,7 +107,7 @@ class ComparationGroupService:
             else:
                 pairs.append((mtype, target_path, src_path))
                 order.append(0)
-        return OK, pairs, order
+        return OK, pairs, order, swap_pairs
 
     def query_comparation_group(self, cg_id: int):
         return self.comparation_group_dao.query_comparation_group(cg_id)

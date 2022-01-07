@@ -4,7 +4,7 @@ from injector import inject
 
 
 query_swap_test_by_id_sql = (
-    "SELECT swap_id, name, result_dir, dataset_id FROM swap_test "
+    "SELECT swap_id, name, result_dir, spd_id FROM swap_test "
     "WHERE swap_id = %(swap_id)s"
 )
 
@@ -16,8 +16,8 @@ query_swap_test_name_by_ids_sql = (
 
 save_swap_test_sql = (
     "INSERT INTO swap_test "
-    "(name, result_dir, dataset_id, remark) "
-    "VALUES (%(name)s, %(result_dir)s, %(dataset_id)s, %(remark)s)"
+    "(name, result_dir, spd_id, remark) "
+    "VALUES (%(name)s, %(result_dir)s, %(spd_id)s, %(remark)s)"
 )
 
 
@@ -60,7 +60,7 @@ class SwapTestDao:
             cnx.close()
         return id_and_names
 
-    def add_swap_test(self, name: str, result_dir: str, dataset_id: int, remark=None):
+    def add_swap_test(self, name: str, result_dir: str, spd_id: int, remark=None):
         cnx = self.cnx_pool.get_connection()
 
         try:
@@ -69,7 +69,7 @@ class SwapTestDao:
                 params = {
                     'name': name.lower(),
                     'result_dir': result_dir,
-                    'dataset_id': dataset_id,
+                    'spd_id': spd_id,
                     'remark': remark
                 }
                 cursor.execute(save_swap_test_sql, params)
